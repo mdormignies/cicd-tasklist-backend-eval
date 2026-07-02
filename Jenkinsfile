@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // IDs des credentials stockés dans Jenkins
         DOCKERHUB_CREDENTIALS = credentials('maxime-dockerhub-credentials-id') 
         SONAR_TOKEN           = credentials('maxime-backend-sonarqube-token-id')
         
@@ -29,6 +28,12 @@ pipeline {
                 sh 'npm run test:coverage'
                 sh 'npm run test:e2e:coverage'
             }
+            post {
+                always {
+                    // Force Jenkins à collecter et afficher graphiquement les tests JUnit
+                    junit 'reports/junit.xml'
+                }
+            }
         }
 
         stage('Analyse SonarQube') {
@@ -50,16 +55,20 @@ pipeline {
 
         stage('Scan de Sécurité (Trivy)') {
             steps {
-                // Ajout de --cache-dir pour éviter les conflits de lock globaux
                 sh 'trivy image --cache-dir .trivycache/ --severity CRITICAL,HIGH --format table maxime-tasklist-backend:local'
             }
         }
 
         stage('Génération des SBOM') {
             steps {
-                // Ajout de --cache-dir également ici
                 sh 'trivy image --cache-dir .trivycache/ --format spdx-json --output sbom-spdx.json maxime-tasklist-backend:local'
                 sh 'trivy image --cache-dir .trivycache/ --format cyclonedx --output sbom-cyclonedx.json maxime-tasklist-backend:local'
+            }
+            post {
+                success {
+                    // Permet de sauvegarder le SBOM dans Jenkins pour pouvoir le télécharger directement depuis l'interface
+                    archiveArtifacts artifacts: 'sbom-spdx.json,sbom-cyclonedx.json', fingerprint: true
+                }
             }
         }
 
