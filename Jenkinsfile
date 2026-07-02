@@ -26,7 +26,7 @@ pipeline {
 
         stage('Exécution des tests & Couverture') {
             steps {
-                sh 'npx prisma generate-schema prisma/schema-test.prisma'
+                sh 'npx prisma generate --schema prisma/schema-test.prisma'
                 sh 'npm run test:coverage'
                 sh 'npm run test:e2e:coverage'
             }
