@@ -12,7 +12,6 @@ pipeline {
     }
 
     triggers {
-        // Déclenchement automatique à chaque push (webhook) ou scrutation régulière
         pollSCM('H/5 * * * *') 
     }
 
@@ -45,21 +44,22 @@ pipeline {
 
         stage('Construction Docker (Local)') {
             steps {
-                // Utilisation du builder Docker Buildx configuré sur le runner
                 sh 'docker buildx build --tag maxime-tasklist-backend:local --load .'
             }
         }
 
         stage('Scan de Sécurité (Trivy)') {
             steps {
-                sh 'trivy image --severity CRITICAL,HIGH --format table maxime-tasklist-backend:local'
+                // Ajout de --cache-dir pour éviter les conflits de lock globaux
+                sh 'trivy image --cache-dir .trivycache/ --severity CRITICAL,HIGH --format table maxime-tasklist-backend:local'
             }
         }
 
         stage('Génération des SBOM') {
             steps {
-                sh 'trivy image --format spdx-json --output sbom-spdx.json maxime-tasklist-backend:local'
-                sh 'trivy image --format cyclonedx --output sbom-cyclonedx.json maxime-tasklist-backend:local'
+                // Ajout de --cache-dir également ici
+                sh 'trivy image --cache-dir .trivycache/ --format spdx-json --output sbom-spdx.json maxime-tasklist-backend:local'
+                sh 'trivy image --cache-dir .trivycache/ --format cyclonedx --output sbom-cyclonedx.json maxime-tasklist-backend:local'
             }
         }
 
