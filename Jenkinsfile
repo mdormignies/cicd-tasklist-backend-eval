@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        nodejs 'Node.js 20+' // À ajuster selon le nom configuré dans votre Jenkins (Administrer > Tools)
-    }
-
     environment {
         // IDs des credentials stockés dans Jenkins
         DOCKERHUB_CREDENTIALS = credentials('maxime-dockerhub-credentials-id') 
